@@ -35,7 +35,6 @@
       out('skatt').textContent = '−' + fmt(r.tax);
       out('net').textContent = fmt(r.net);
       out('eff').textContent = g ? (r.tax / g * 100).toFixed(1).replace('.', ',') + ' %' : '–';
-      document.dispatchEvent(new CustomEvent('salary', { detail: g }));
     }
 
     load(function (d) {
@@ -56,26 +55,37 @@
     gross.addEventListener('input', render);
   });
 
-  // ---- spread band: where does the reader's salary land? ----
+  // ---- "Är din lön rimlig?": band marker + verdict, synced both ways with the payslip ----
   Array.prototype.forEach.call(document.querySelectorAll('[data-band]'), function (band) {
-    var p = JSON.parse(band.dataset.band), lo = +band.dataset.lo, hi = +band.dataset.hi;
-    var you = band.querySelector('.you'), cap = band.querySelector('[data-you-text]'), original = cap.textContent, first = true;
+    var p = JSON.parse(band.dataset.band), lo = +band.dataset.lo, hi = +band.dataset.hi, name = band.dataset.name;
+    var you = band.querySelector('.you'), cap = band.querySelector('[data-you-text]'), original = cap.textContent;
+    var input = document.querySelector('[data-you]'), gross = document.querySelector('[data-gross]');
     var pts = [[p.p10, 10], [p.p25, 25], [p.p50, 50], [p.p75, 75], [p.p90, 90]];
-    document.addEventListener('salary', function (e) {
-      var g = e.detail;
-      if (first) { first = false; return; }          // initial render = the median itself; keep the server caption
+    var parse = function (v) { return parseInt(String(v).replace(/\D/g, ''), 10) || 0; };
+
+    function show(g) {
       if (!g) { you.hidden = true; cap.textContent = original; return; }
       you.hidden = false;
       you.style.left = Math.max(0, Math.min(100, (g - lo) / (hi - lo) * 100)) + '%';
-      var share;
-      if (g < p.p10) share = 'Med ' + fmt(g) + ' tjänar du mindre än 9 av 10 i yrket.';
-      else if (g > p.p90) share = 'Med ' + fmt(g) + ' tjänar du mer än 9 av 10 i yrket.';
+      var share, diff = g - p.p50;
+      if (g < p.p10) share = 'Du tjänar mindre än 9 av 10 ' + name + '.';
+      else if (g > p.p90) share = 'Du tjänar mer än 9 av 10 ' + name + '.';
       else {
         for (var i = 1; i < pts.length; i++) if (g <= pts[i][0]) break;
         var a = pts[i - 1], b = pts[i], q = a[1] + (g - a[0]) / Math.max(1, b[0] - a[0]) * (b[1] - a[1]);
-        share = 'Med ' + fmt(g) + ' tjänar du mer än ungefär ' + Math.round(q) + ' % i yrket.';
+        share = 'Du tjänar mer än ungefär ' + Math.round(q) + ' % av alla ' + name + '.';
       }
+      share += Math.abs(diff) < 100 ? ' Det är precis medianlönen.'
+        : ' Det är ' + fmt(Math.abs(diff)) + (diff < 0 ? ' under' : ' över') + ' medianlönen på ' + fmt(p.p50) + '.';
       cap.textContent = share;
+    }
+    if (input) input.addEventListener('input', function () {
+      var g = parse(input.value); show(g);
+      if (gross && g) { gross.value = g; gross.dispatchEvent(new Event('input')); }
+    });
+    if (gross) gross.addEventListener('input', function (e) {
+      if (!e.isTrusted) return;                      // our own sync above
+      var g = parse(gross.value); if (input) input.value = g || ''; show(g);
     });
   });
 

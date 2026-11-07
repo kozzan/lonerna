@@ -1,0 +1,156 @@
+@font-face {
+  font-family: 'Schibsted Grotesk'; font-style: normal; font-weight: 400 800; font-display: swap;
+  src: url(/assets/fonts/schibsted.woff2) format('woff2');
+}
+
+/* Payslip palette: cool form paper, navy ink. Green is always money you keep, rose is always tax. */
+:root {
+  --paper: #EEF2F5; --sheet: #FFFFFF; --ink: #15243A; --muted: #56657A; --rule: #C9D3DC;
+  --keep: #0B6B53; --keep-soft: #D3EBE2; --tax: #A63F5E; --band: #9FB3C6; --band-in: #3E5C7C;
+  --focus: #2F6FE0;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1621; --sheet: #16212F; --ink: #E4EAF1; --muted: #9AA8B8; --rule: #2B3A4C;
+    --keep: #4CC59E; --keep-soft: #173A31; --tax: #E7899F; --band: #3A4D63; --band-in: #8FB0D2;
+    --focus: #7AA7FF; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1621; --sheet: #16212F; --ink: #E4EAF1; --muted: #9AA8B8; --rule: #2B3A4C;
+  --keep: #4CC59E; --keep-soft: #173A31; --tax: #E7899F; --band: #3A4D63; --band-in: #8FB0D2;
+  --focus: #7AA7FF; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 17px/1.55 'Schibsted Grotesk', system-ui, sans-serif;
+}
+/* tabular figures only where numbers line up; in prose they widen , and . too */
+.n, .slip-rows td, .net b, .ticks, .field input, .trend { font-variant-numeric: tabular-nums; }
+a { color: inherit; text-decoration-color: var(--band); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: 16px; top: 8px; background: var(--sheet); padding: 8px; z-index: 9; }
+
+h1 { font-size: clamp(2rem, 6vw, 2.9rem); line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; margin: 0.4em 0 0.3em; }
+h2 { font-size: 1.35rem; line-height: 1.25; font-weight: 700; margin: 2.2em 0 0.5em; }
+h3 { font-size: 1.05rem; margin: 1.4em 0 0.2em; }
+p { margin: 0 0 1em; max-width: 68ch; }
+.lead { font-size: 1.14rem; }
+.small { font-size: 0.88rem; color: var(--muted); }
+.crumb { font-size: 0.88rem; color: var(--muted); margin: 1.4em 0 0; }
+
+/* header / footer */
+.site-head { border-bottom: 1px solid var(--rule); }
+.site-head .wrap { display: flex; align-items: center; gap: 20px; min-height: 58px; flex-wrap: wrap; }
+.brand { font-weight: 800; font-size: 1.3rem; text-decoration: none; letter-spacing: -0.02em; }
+.brand::after { content: ''; display: inline-block; width: 0.42em; height: 0.42em; border-radius: 50%; background: var(--keep); margin-left: 3px; }
+.nav { display: flex; gap: 18px; flex: 1; font-size: 0.95rem; flex-wrap: wrap; }
+.nav a { text-decoration: none; color: var(--muted); }
+.nav a:hover { color: var(--ink); }
+.iconbtn { background: none; border: 1px solid var(--rule); color: var(--ink); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1rem; }
+.site-foot { border-top: 1px solid var(--rule); margin-top: 64px; padding: 24px 0 40px; font-size: 0.88rem; color: var(--muted); }
+.site-foot nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.linklike { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+
+/* ---- the payslip: the one loud thing on every page ---- */
+.slip {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px;
+  margin: 1.6em 0; padding: 22px 22px 18px; position: relative;
+  /* perforated top edge, like a tear-off lönebesked */
+  background-image: radial-gradient(circle at 8px -2px, var(--paper) 5px, transparent 5.5px);
+  background-size: 16px 10px; background-repeat: repeat-x;
+}
+.slip-title { margin: 0.4em 0 0.8em; font-size: 1.1rem; }
+.slip-head { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: end; margin-bottom: 14px; }
+.slip-head .slip-title, .slip-head .check { grid-column: 1 / -1; }
+.field span { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+.field input, .field select, .filter, .search input {
+  width: 100%; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 9px 11px; min-height: 44px;
+}
+.field input[data-gross] { font-size: 1.3rem; font-weight: 700; }
+.check { font-size: 0.92rem; display: flex; gap: 8px; align-items: center; }
+.check input { width: 18px; height: 18px; accent-color: var(--keep); }
+.slip-rows { width: 100%; border-collapse: collapse; }
+.slip-rows th { text-align: left; font-weight: 400; padding: 7px 0; border-bottom: 1px dotted var(--rule); }
+.slip-rows td { text-align: right; padding: 7px 0 7px 12px; border-bottom: 1px dotted var(--rule); white-space: nowrap; }
+.slip-rows .minus { color: var(--tax); }
+.slip-rows .plus { color: var(--keep); }
+.slip-rows .sum th, .slip-rows .sum td { font-weight: 700; border-bottom: 2px solid var(--ink); color: var(--ink); }
+.net { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
+       margin: 14px -22px 12px; padding: 14px 22px; background: var(--keep-soft); max-width: none; }
+.net span { font-weight: 600; }
+.net b { font-size: clamp(2rem, 8vw, 2.8rem); line-height: 1; color: var(--keep); font-weight: 800; letter-spacing: -0.02em; }
+.slip .small { margin: 0; }
+
+/* ---- spread band ---- */
+.band { margin: 1em 0 1.4em; }
+.track { position: relative; height: 26px; border-radius: 3px; background: repeating-linear-gradient(90deg, transparent 0 9px, var(--rule) 9px 10px); }
+.track .outer, .track .inner { position: absolute; top: 4px; bottom: 4px; border-radius: 2px; }
+.track .outer { background: var(--band); }
+.track .inner { background: var(--band-in); top: 0; bottom: 0; }
+.track .you { position: absolute; top: -8px; bottom: -8px; width: 4px; margin-left: -2px; background: var(--keep); border-radius: 2px; transition: left .25s ease; }
+.ticks { position: relative; height: 46px; font-size: 0.8rem; }
+.tick { position: absolute; transform: translateX(-50%); text-align: center; top: 6px; line-height: 1.2; }
+.tick b { display: block; font-weight: 600; }
+.tick i { font-style: normal; color: var(--muted); }
+.tick.p25, .tick.p75 { top: 6px; }
+.band figcaption { font-size: 0.98rem; }
+@media (max-width: 560px) { .tick.p25, .tick.p75 { display: none; } }
+
+/* ---- tables ---- */
+.tablewrap { overflow-x: auto; margin: 0.6em 0 1em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.96rem; }
+thead th { text-align: left; font-weight: 600; font-size: 0.84rem; color: var(--muted); border-bottom: 1px solid var(--ink); padding: 6px 8px 6px 0; }
+tbody th, tbody td { text-align: left; font-weight: 400; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.n { text-align: right !important; white-space: nowrap; padding-right: 0; padding-left: 14px; }
+table.bars td:nth-child(2) { width: 45%; vertical-align: middle; }
+.bar { display: block; height: 12px; background: var(--band-in); border-radius: 0 2px 2px 0; }
+details summary { cursor: pointer; color: var(--muted); font-size: 0.92rem; margin: 0.4em 0; }
+
+/* ---- trend ---- */
+.trend { width: 100%; max-width: 560px; height: auto; display: block; margin: 0.4em 0; }
+.trend polyline { fill: none; stroke: var(--keep); stroke-width: 3; stroke-linejoin: round; }
+.trend circle { fill: var(--keep); }
+.trend text { font: 14px 'Schibsted Grotesk', sans-serif; fill: var(--muted); }
+.trend text.v { fill: var(--ink); font-weight: 700; font-size: 17px; }
+
+/* ---- search / filter ---- */
+.search { margin: 2em 0; }
+.search label { display: block; font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+.search div { display: flex; gap: 8px; }
+.search button { font: inherit; font-weight: 600; background: var(--ink); color: var(--paper); border: 0; border-radius: 4px; padding: 0 18px; min-height: 44px; cursor: pointer; white-space: nowrap; }
+.filter { margin: 0.6em 0 1em; }
+.letters { display: flex; flex-wrap: wrap; gap: 4px 12px; font-weight: 600; margin-bottom: 1em; }
+
+.faq h3 { margin-top: 1.2em; }
+.source { margin-top: 2.4em; }
+
+/* ---- ads: sized placeholders, never shift content ---- */
+.ad { margin: 1.6em auto; text-align: center; overflow: hidden; }
+.ad-728x90 { width: 728px; max-width: 100%; height: 90px; }
+.ad-320x100 { width: 320px; height: 100px; }
+.ad-336x280 { width: 336px; height: 280px; }
+.ad-300x250 { width: 300px; height: 250px; }
+.mobile-ad { display: none; }
+@media (max-width: 760px) { .desktop-ad { display: none !important; } .mobile-ad { display: block; } }
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .site-head .wrap { gap: 0 12px; padding-top: 8px; }
+  .brand { flex: 1; }
+  .nav { order: 3; flex-basis: 100%; gap: 16px; padding: 6px 0 10px; font-size: 0.92rem; }
+  .slip { padding: 18px 16px 14px; }
+  .net { margin: 14px -16px 12px; padding: 14px 16px; }
+  .slip-head { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media print { .ad, .site-head nav, .iconbtn, .search { display: none !important; } }

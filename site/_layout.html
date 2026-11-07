@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="sv" prefix="og: https://ogp.me/ns#">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$title</title>
+<meta name="description" content="$desc">
+<link rel="canonical" href="$canonical">
+<meta property="og:title" content="$title">
+<meta property="og:description" content="$desc">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sv_SE">
+<meta property="og:site_name" content="Lönerna">
+<meta property="og:url" content="$canonical">
+<meta name="theme-color" content="#EEF2F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1621" media="(prefers-color-scheme: dark)">
+<link rel="preload" href="/assets/fonts/schibsted.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<script>window.BASE_PATH = "$basepath";</script>
+<!-- Consent Mode v2 defaults. MUST run before the AdSense tag (EU traffic). -->
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){ dataLayer.push(arguments); }
+gtag('consent', 'default', {
+  ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied',
+  analytics_storage: 'denied', wait_for_update: 500
+});
+</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2838730195714407" crossorigin="anonymous"></script>
+<script>try { var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+$head
+</head>
+<body>
+<a class="skip" href="#main">Hoppa till innehåll</a>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="/">lönerna</a>
+  <nav class="nav">
+    <a href="/">Lön efter skatt</a>
+    <a href="/yrken/">Yrken</a>
+    <a href="/kommunalskatt/">Kommunalskatt</a>
+  </nav>
+  <button class="iconbtn" id="theme-toggle" type="button" aria-label="Byt mellan ljust och mörkt läge">☾</button>
+</div></header>
+<main id="main">
+$body
+</main>
+<footer class="site-foot"><div class="wrap">
+  <p>Lönestatistik från SCB ($datayear). Skatt enligt Skatteverkets regler för $year. Uppdaterad $updated.</p>
+  <nav><button class="linklike" id="cmp-reopen" type="button" hidden>Cookieinställningar</button><a href="/om/">Om sajten</a><a href="/integritetspolicy/">Integritetspolicy</a></nav>
+</div></footer>
+<script src="/assets/tax.js"></script>
+<script src="/assets/app.js"></script>
+<script src="/assets/lon.js"></script>
+</body>
+</html>

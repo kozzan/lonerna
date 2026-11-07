@@ -9,4 +9,4 @@ See `CLAUDE.md` for how it works.
 - [ ] GitHub repo + Pages (public)
 - [ ] Search Console + sitemap
 - [ ] AdSense: add site, then a per-site ad slot in `tools/build.py` (`ADS_SLOT`)
-- [ ] og.png
+- [x] og.png

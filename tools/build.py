@@ -423,7 +423,7 @@ def main():
         os.makedirs(os.path.dirname(out), exist_ok=True)
         page = layout.safe_substitute(
             basepath=BASE_PATH, title=esc(p.get("title", SITE_NAME)), desc=esc(p.get("desc", "")),
-            canonical=BASE_URL + BASE_PATH + p["route"], head=p.get("head", ""), body=p["body"],
+            canonical=BASE_URL + BASE_PATH + p["route"], image=BASE_URL + BASE_PATH + "/assets/og.png", head=p.get("head", ""), body=p["body"],
             year=TAX_YEAR, datayear=YEAR, updated=TODAY.isoformat())
         page = mount_ads(page)
         if BASE_PATH:

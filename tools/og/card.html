@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Source for site/assets/og.png. Render: see tools/og/README.md -->
+<meta charset="utf-8">
+<style>
+@font-face { font-family: S; src: url(../../site/assets/fonts/schibsted.woff2); font-weight: 400 800; }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1200px; height: 630px; background: #EEF2F5; color: #15243A; font-family: S, sans-serif; display: flex; align-items: center; padding: 0 72px; gap: 64px; }
+.l { flex: 1; }
+.brand { font-weight: 800; font-size: 40px; letter-spacing: -0.02em; margin-bottom: 36px; }
+.brand::after { content: ''; display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #0B6B53; margin-left: 5px; }
+h1 { font-size: 64px; line-height: 1.05; font-weight: 800; letter-spacing: -0.025em; }
+.sub { font-size: 26px; color: #56657A; margin-top: 26px; }
+.slip { width: 420px; background: #fff; border: 2px solid #C9D3DC; border-radius: 6px; padding: 30px 30px 0; font-size: 24px;
+  background-image: radial-gradient(circle at 10px -3px, #EEF2F5 7px, transparent 7.5px); background-size: 20px 12px; background-repeat: repeat-x; }
+.t { font-weight: 700; margin: 8px 0 14px; }
+.r { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 2px dotted #C9D3DC; font-variant-numeric: tabular-nums; }
+.m { color: #A63F5E; } .p { color: #0B6B53; }
+.net { margin: 18px -30px 0; padding: 22px 30px; background: #D3EBE2; display: flex; justify-content: space-between; align-items: baseline; }
+.net b { font-size: 50px; color: #0B6B53; font-weight: 800; letter-spacing: -0.02em; }
+</style>
+<div class="l">
+  <div class="brand">lönerna</div>
+  <h1>Vad tjänar ett yrke, och vad blir kvar?</h1>
+  <p class="sub">360 yrken enligt SCB. Lön efter skatt för din kommun.</p>
+</div>
+<div class="slip">
+  <p class="t">Poliser, medianlön</p>
+  <div class="r"><span>Bruttolön</span><span>43 300 kr</span></div>
+  <div class="r"><span>Skatt</span><span class="m">−9 267 kr</span></div>
+  <div class="net"><span>Kvar</span><b>34 033 kr</b></div>
+</div>

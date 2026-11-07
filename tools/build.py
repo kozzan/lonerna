@@ -150,12 +150,15 @@ def band(o):
     pos = lambda v: f"{(v - lo) / (hi - lo) * 100:.2f}%"
     pts = json.dumps({k: d[k] for k, _ in PCT})
     ticks = "".join(f'<span class="tick {k}" style="left:{pos(d[k])}"><b>{num(d[k])}</b><i>{lbl}</i></span>' for k, lbl in PCT)
-    return f"""<figure class="band" data-band='{pts}' data-lo="{lo:.0f}" data-hi="{hi:.0f}">
+    nl = esc(lower_first(o["name"]))
+    return f"""<section class="check-pay" aria-labelledby="check-h"><h2 id="check-h">Är din lön rimlig?</h2>
+<label class="field you-field"><span>Din månadslön före skatt</span><input data-you inputmode="numeric" autocomplete="off" placeholder="Till exempel {num(d['p50'])}"></label>
+<figure class="band" data-band='{pts}' data-lo="{lo:.0f}" data-hi="{hi:.0f}" data-name="{nl}">
 <div class="track" aria-hidden="true"><span class="outer" style="left:{pos(d['p10'])};right:calc(100% - {pos(d['p90'])})"></span>
 <span class="inner" style="left:{pos(d['p25'])};right:calc(100% - {pos(d['p75'])})"></span><span class="you" hidden></span></div>
 <div class="ticks">{ticks}</div>
-<figcaption data-you-text>Hälften av alla {esc(lower_first(o['name']))} tjänar mellan {kr(d['p25'])} och {kr(d['p75'])}. Var tionde tjänar under {kr(d['p10'])} och var tionde över {kr(d['p90'])}.</figcaption>
-</figure>"""
+<figcaption data-you-text aria-live="polite">Hälften av alla {nl} tjänar mellan {kr(d['p25'])} och {kr(d['p75'])}. Var tionde tjänar under {kr(d['p10'])} och var tionde över {kr(d['p90'])}.</figcaption>
+</figure></section>"""
 
 
 def trend_svg(points):
@@ -286,10 +289,10 @@ def page_occ(o):
     body = f"""<div class="wrap">{cr}
 <h1>Lön för {esc(nl)}</h1>
 <p class="lead">{esc(answer)}</p>
-{AD_TOP}
-{slip(med, f"Medianlön för {nl}")}
-<h2>Lönespann</h2>
 {band(o)}
+{AD_TOP}
+{slip(med, f"Lön efter skatt för {nl}")}
+<h2>Lön före och efter skatt</h2>
 {pct_html}
 {AD_MID}
 {sex_html}

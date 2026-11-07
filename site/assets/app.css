@@ -91,8 +91,15 @@ p { margin: 0 0 1em; max-width: 68ch; }
 .net b { font-size: clamp(2rem, 8vw, 2.8rem); line-height: 1; color: var(--keep); font-weight: 800; letter-spacing: -0.02em; }
 .slip .small { margin: 0; }
 
+/* ---- "Är din lön rimlig?" ---- */
+.check-pay { margin: 1.6em 0 0.6em; }
+.check-pay h2 { margin-top: 0; }
+.you-field { display: block; max-width: 320px; margin-bottom: 18px; }
+.you-field input { font-size: 1.3rem; font-weight: 700; }
+.band figcaption[aria-live] { font-weight: 500; }
+
 /* ---- spread band ---- */
-.band { margin: 1em 0 1.4em; }
+.band { margin: 0.4em 0 0; }
 .track { position: relative; height: 26px; border-radius: 3px; background: repeating-linear-gradient(90deg, transparent 0 9px, var(--rule) 9px 10px); }
 .track .outer, .track .inner { position: absolute; top: 4px; bottom: 4px; border-radius: 2px; }
 .track .outer { background: var(--band); }

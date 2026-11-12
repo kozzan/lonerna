@@ -197,6 +197,11 @@ def occ_table(rows, caption):
             + "</tbody></table></div>")
 
 
+def fit(limit, *options):
+    """First option within the length limit (options run from fullest to shortest)."""
+    return next((t for t in options if len(t) <= limit), options[-1])
+
+
 # ------------------------------------------------------------------ occupation page
 def page_occ(o):
     d, raw, name = o["d"], o["raw"], o["name"]
@@ -305,8 +310,15 @@ def page_occ(o):
 {related}
 <p class="small source">Källa: SCB, Lönestrukturstatistik {YEAR} (yrkeskod SSYK {o['code']}), heltidslön inklusive fasta tillägg. Skatt enligt Skatteverkets tekniska beskrivning för {TAX_YEAR}.</p>
 </div>"""
-    return {"route": f"/yrke/{o['slug']}/", "title": f"{name} lön: {kr(med)} – efter skatt {kr(med_net)} ({TAX_YEAR})",
-            "desc": answer, "priority": "0.8", "body": body, "head": faq_ld(faqs) + cr_ld}
+    title = fit(70, f"{name} lön: {kr(med)} – efter skatt {kr(med_net)} ({TAX_YEAR})",
+                f"{name} lön: {kr(med)} – efter skatt {kr(med_net)}",
+                f"{name} lön: {kr(med)}", f"{name}: {kr(med)}")
+    desc = fit(160, f"Medianlönen för {nl} är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt.",
+               f"Medianlön för {nl}: {kr(med)} före skatt och {kr(med_net)} efter skatt i månaden.",
+               f"{name}: median {kr(med)} före skatt, {kr(med_net)} efter skatt.",
+               f"{name}: median {kr(med)}, {kr(med_net)} efter skatt.")
+    return {"route": f"/yrke/{o['slug']}/", "title": title,
+            "desc": desc, "priority": "0.8", "body": body, "head": faq_ld(faqs) + cr_ld}
 
 
 # ------------------------------------------------------------------ hub pages

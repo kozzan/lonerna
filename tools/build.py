@@ -313,6 +313,10 @@ def page_occ(o):
     title = fit(70, f"{name} lön: {kr(med)} – efter skatt {kr(med_net)} ({TAX_YEAR})",
                 f"{name} lön: {kr(med)} – efter skatt {kr(med_net)}",
                 f"{name} lön: {kr(med)}", f"{name}: {kr(med)}")
+    if len(title) > 70:  # name alone too long: trim at a word boundary, keep the figure
+        tail = f": {kr(med)}"
+        cut = name[:70 - len(tail) - 1].rsplit(" ", 1)[0].rstrip(" ,-")
+        title = f"{cut}…{tail}"
     desc = fit(160, f"Medianlönen för {nl} är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt.",
                f"Medianlön för {nl}: {kr(med)} före skatt och {kr(med_net)} efter skatt i månaden.",
                f"{name}: median {kr(med)} före skatt, {kr(med_net)} efter skatt.",

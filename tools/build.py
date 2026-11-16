@@ -202,6 +202,10 @@ def fit(limit, *options):
     return next((t for t in options if len(t) <= limit), options[-1])
 
 
+# Occupations whose page is framed as the question people search for ("hur mycket tjänar en …").
+QUESTION_SLUGS = {"fastighetsforvaltare"}
+
+
 # ------------------------------------------------------------------ occupation page
 def page_occ(o):
     d, raw, name = o["d"], o["raw"], o["name"]
@@ -213,6 +217,11 @@ def page_occ(o):
     answer = (f"Medianlönen för {nl} är {kr(med)} i månaden före skatt, enligt SCB:s lönestatistik för {YEAR}. "
               f"Efter skatt blir det {kr(med_net)} med genomsnittlig kommunalskatt. "
               f"Det är {cmp_all}, plats {o['rank']} av {n_occ} yrken.")
+    ask = o["slug"] in QUESTION_SLUGS
+    if ask:
+        answer = (f"En {nl} tjänar i median {kr(med)} i månaden före skatt, {kr(med * 12)} per år, enligt SCB:s lönestatistik för {YEAR}. "
+                  f"Efter skatt blir det {kr(med_net)} i månaden med genomsnittlig kommunalskatt. "
+                  f"Lönen är {cmp_all}, plats {o['rank']} av {n_occ} yrken.")
 
     # men / women
     men, women = o["y"].get("all", {}).get("men", {}), o["y"].get("all", {}).get("women", {})
@@ -292,7 +301,7 @@ def page_occ(o):
 
     cr, cr_ld = crumb(("/yrken/", "Alla yrken"), (f"/yrke/{o['slug']}/", name))
     body = f"""<div class="wrap">{cr}
-<h1>Lön för {esc(nl)}</h1>
+<h1>{esc(f"Hur mycket tjänar en {nl}?") if ask else f"Lön för {esc(nl)}"}</h1>
 <p class="lead">{esc(answer)}</p>
 {band(o)}
 {AD_TOP}
@@ -321,6 +330,10 @@ def page_occ(o):
                f"Medianlön för {nl}: {kr(med)} före skatt och {kr(med_net)} efter skatt i månaden.",
                f"{name}: median {kr(med)} före skatt, {kr(med_net)} efter skatt.",
                f"{name}: median {kr(med)}, {kr(med_net)} efter skatt.")
+    if ask:
+        title = fit(70, f"Hur mycket tjänar en {nl}? {kr(med)} i månaden ({TAX_YEAR})", f"Hur mycket tjänar en {nl}? {kr(med)} i månaden")
+        desc = fit(160, f"Hur mycket tjänar en {nl}? Medianlönen är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt. Se lön per ålder, sektor och region.",
+                   f"Hur mycket tjänar en {nl}? Median {kr(med)} före skatt och {kr(med_net)} efter skatt. Se lön per ålder, sektor och region.")
     return {"route": f"/yrke/{o['slug']}/", "title": title,
             "desc": desc, "priority": "0.8", "body": body, "head": faq_ld(faqs) + cr_ld}
 

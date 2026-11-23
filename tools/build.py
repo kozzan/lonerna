@@ -204,6 +204,8 @@ def fit(limit, *options):
 
 # Occupations whose page is framed as the question people search for ("hur mycket tjänar en …").
 QUESTION_SLUGS = {"fastighetsforvaltare"}
+# Occupations people search for by a narrower name than SCB's: slug -> (search term, term as used in running text).
+ALIAS_SLUGS = {"installations-och-serviceelektriker": ("Serviceelektriker", "serviceelektriker")}
 
 
 # ------------------------------------------------------------------ occupation page
@@ -222,6 +224,17 @@ def page_occ(o):
         answer = (f"En {nl} tjänar i median {kr(med)} i månaden före skatt, {kr(med * 12)} per år, enligt SCB:s lönestatistik för {YEAR}. "
                   f"Efter skatt blir det {kr(med_net)} i månaden med genomsnittlig kommunalskatt. "
                   f"Lönen är {cmp_all}, plats {o['rank']} av {n_occ} yrken.")
+
+    alias_html, alias_faq = "", None
+    if o["slug"] in ALIAS_SLUGS:
+        _, al = ALIAS_SLUGS[o["slug"]]
+        lo = f"{kr(d['p25'])}–{kr(d['p75'])}"
+        alias_html = (f"<h2>Vad tjänar en {al}?</h2>"
+                      f"<p>En {al} tjänar i median {kr(med)} i månaden före skatt ({kr(med * 12)} per år) och {kr(med_net)} efter skatt. "
+                      f"Hälften tjänar mellan {lo} i månaden, och var tionde tjänar över {kr(d['p90'])}.</p>"
+                      f"<p>Siffrorna på sidan gäller hela yrkesgruppen {esc(nl)}, SSYK {o['code']}.</p>")
+        alias_faq = (f"Vad tjänar en {al}?", f"Medianlönen är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt. "
+                     f"Hälften tjänar mellan {lo} ({YEAR}, SCB, SSYK {o['code']}, hela yrkesgruppen {nl}).")
 
     # men / women
     men, women = o["y"].get("all", {}).get("men", {}), o["y"].get("all", {}).get("women", {})
@@ -298,6 +311,7 @@ def page_occ(o):
         k = "18-24" if age.get("18-24") else "25-34"
         faqs[2] = (faqs[2][0], f"SCB redovisar inte ingångslöner. {k.replace('-', '–')}-åringar har en medellön på {kr(age[k])}, och var tionde {nl} tjänar under {kr(d['p10'])}.")
     faqs += [f for f in (sex_faq, trend_faq) if f]
+    if alias_faq: faqs.insert(0, alias_faq)
 
     cr, cr_ld = crumb(("/yrken/", "Alla yrken"), (f"/yrke/{o['slug']}/", name))
     body = f"""<div class="wrap">{cr}
@@ -305,6 +319,7 @@ def page_occ(o):
 <p class="lead">{esc(answer)}</p>
 {band(o)}
 {AD_TOP}
+{alias_html}
 {slip(med, f"Lön efter skatt för {nl}")}
 <h2>Lön före och efter skatt</h2>
 {pct_html}
@@ -334,6 +349,14 @@ def page_occ(o):
         title = fit(70, f"Hur mycket tjänar en {nl}? {kr(med)} i månaden ({TAX_YEAR})", f"Hur mycket tjänar en {nl}? {kr(med)} i månaden")
         desc = fit(160, f"Hur mycket tjänar en {nl}? Medianlönen är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt. Se lön per ålder, sektor och region.",
                    f"Hur mycket tjänar en {nl}? Median {kr(med)} före skatt och {kr(med_net)} efter skatt. Se lön per ålder, sektor och region.")
+    if o["slug"] in ALIAS_SLUGS:
+        term, al = ALIAS_SLUGS[o["slug"]]
+        body = body.replace("Källa: SCB, Lönestrukturstatistik", 'Källa: <a href="https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__AM__AM0110/" rel="noopener">SCB, Lönestrukturstatistik', 1) \
+                   .replace(f"(yrkeskod SSYK {o['code']}),", f"(yrkeskod SSYK {o['code']})</a>,", 1)
+        title = fit(70, f"{term} lön: {kr(med)} i månaden, {kr(med_net)} efter skatt", f"{term} lön: {kr(med)} i månaden")
+        desc = fit(160, f"{term} lön: medianlönen är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt. Se lön per percentil, ålder och region ({YEAR}).",
+                   f"{term} lön: median {kr(med)} före skatt och {kr(med_net)} efter skatt. Se lön per ålder och region.")
+        body = body.replace(f"<h1>Lön för {esc(nl)}</h1>", f"<h1>{term} lön: vad tjänar en {al}?</h1>", 1)
     return {"route": f"/yrke/{o['slug']}/", "title": title,
             "desc": desc, "priority": "0.8", "body": body, "head": faq_ld(faqs) + cr_ld}
 

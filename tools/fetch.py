@@ -6,7 +6,7 @@
 Run once a year when SCB publishes (lönestrukturstatistik ~June, kommunalskatt
 ~December). Output is committed; the build never touches the network.
 """
-import json, os, urllib.request
+import html, io, json, os, re, urllib.request, zipfile
 
 API = "https://api.scb.se/OV0104/v1/doris/sv/ssd/"
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "site", "data")
@@ -30,6 +30,24 @@ def scb(table, query):
 def meta(table):
     with urllib.request.urlopen(API + table, timeout=60) as r:
         return {v["code"]: dict(zip(v["values"], v["valueTexts"])) for v in json.load(r)["variables"]}
+
+
+SSYK_INDEX = "https://www.scb.se/contentassets/0c0089cc085a45d49c1dc83923ad933a/ssyk_index_webb_2026.xlsx"
+
+
+def ssyk_titles(xlsx):
+    """SCB's yrkesbenämningar per SSYK 2012 code, from the first sheet of their index (stdlib only)."""
+    z = zipfile.ZipFile(io.BytesIO(xlsx))
+    ss = [html.unescape(re.sub(r"<[^>]+>", "", m)) for m in re.findall(r"<si>(.*?)</si>", z.read("xl/sharedStrings.xml").decode(), re.S)]
+    out = {}
+    for row in re.findall(r"<row[^>]*>(.*?)</row>", z.read("xl/worksheets/sheet1.xml").decode(), re.S):
+        cells = []
+        for attrs, body in re.findall(r"<c([^>]*?)(?:/>|>(.*?)</c>)", row, re.S):
+            v = re.search(r"<v>(.*?)</v>", body or "")
+            cells.append(ss[int(v.group(1))] if 't="s"' in attrs and v else v.group(1) if v else "")
+        if len(cells) >= 2 and cells[0].isdigit() and cells[1].strip():
+            out.setdefault(cells[0].zfill(4), []).append(" ".join(cells[1].split()))
+    return {k: sorted(set(v), key=str.lower) for k, v in out.items()}
 
 
 def put(name, obj):
@@ -87,6 +105,10 @@ def main():
         r = kom.setdefault(k["Region"], {})
         r["burial" if c == "OE0101G1" else "church"] = v
     put("kommuner.json", kom)
+
+    # SITE-65: the job titles SCB files under each code, for "Vanliga titlar" and the lead title in tools/titles.py
+    with urllib.request.urlopen(SSYK_INDEX, timeout=60) as r:
+        put("ssyk-titlar.json", ssyk_titles(r.read()))
 
 
 if __name__ == "__main__":

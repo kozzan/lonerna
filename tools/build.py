@@ -15,6 +15,7 @@ from string import Template
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tools import tax
+from tools.titles import TITLES
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE, DIST = os.path.join(ROOT, "site"), os.path.join(ROOT, "dist")
@@ -34,6 +35,7 @@ esc = H.escape
 
 OCC_RAW = json.load(open(os.path.join(SITE, "data/yrken.json"), encoding="utf-8"))
 KOM_RAW = json.load(open(os.path.join(SITE, "data/kommuner.json"), encoding="utf-8"))
+SSYK_TITLES = json.load(open(os.path.join(SITE, "data/ssyk-titlar.json"), encoding="utf-8"))   # SITE-65, SCB index
 RIKET = KOM_RAW["00"]                 # average kommunalskatt + burial fee
 DEF_RATE, DEF_BURIAL = RIKET["rate"], RIKET["burial"]
 KOMMUNER = sorted(({"code": c, "name": v["name"], "rate": v["rate"], "burial": KOM_RAW[c[:2]]["burial"],
@@ -207,9 +209,36 @@ QUESTION_SLUGS = {"fastighetsforvaltare"}
 
 
 # ------------------------------------------------------------------ occupation page
+CHEF_SUFFIX = re.compile(r", (funktions- eller mellanchef|verksamhetsnära chef)$")
+MAX_TITLES = 15
+
+
+def common_titles(o):
+    """SITE-65: the everyday titles first (tools/titles.py), then the rest of SCB's index for the code, deduped."""
+    t = TITLES.get(o["code"])
+    names = [t["lead"][0]] + [a for a, _ in t["alts"]] if t else []
+    used = {src for _, src in ([t["lead"]] + t["alts"] if t else [])}
+    for x in SSYK_TITLES.get(o["code"], []):
+        if x in used: continue   # already shown in its everyday form
+        x = CHEF_SUFFIX.sub("", x)
+        if x.lower() not in {n.lower() for n in names}: names.append(x)
+    return names[:MAX_TITLES], len(SSYK_TITLES.get(o["code"], []))
+
+
+def titles_html(o):
+    names, n_scb = common_titles(o)
+    if not names: return ""
+    more = f" SCB listar {n_scb} titlar under koden; här är de första {len(names)}." if n_scb > len(names) else ""
+    return (f'<h2 id="titlar">Vanliga titlar</h2><ul class="titlar">{"".join(f"<li>{esc(n)}</li>" for n in names)}</ul>'
+            f'<p class="small">Titlar som SCB för till yrkesgruppen {esc(o["name"])} (SSYK {o["code"]}) i sitt yrkesindex för SSYK 2012.{more} '
+            f'Lönesiffrorna på sidan gäller hela gruppen.</p>')
+
+
 def page_occ(o):
     d, raw, name = o["d"], o["raw"], o["name"]
-    nl = lower_first(name); med = d["p50"]; med_net = net(med); n_occ = len(OCC)
+    tt = TITLES.get(o["code"])
+    # SITE-65: a mapped page speaks of the titles people search for; the SCB group is named right after
+    nl = tt["h1"] if tt else lower_first(name); med = d["p50"]; med_net = net(med); n_occ = len(OCC)
     vs_all = (med / ALL["p50"] - 1) * 100
     cmp_all = (f"{pct(abs(vs_all))} {'högre' if vs_all > 0 else 'lägre'} än medianlönen för alla yrken ({kr(ALL['p50'])})"
                if abs(vs_all) >= 1 else f"i nivå med medianlönen för alla yrken ({kr(ALL['p50'])})")
@@ -217,11 +246,13 @@ def page_occ(o):
     answer = (f"Medianlönen för {nl} är {kr(med)} i månaden före skatt, enligt SCB:s lönestatistik för {YEAR}. "
               f"Efter skatt blir det {kr(med_net)} med genomsnittlig kommunalskatt. "
               f"Det är {cmp_all}, plats {o['rank']} av {n_occ} yrken.")
+    group = f" Siffrorna gäller SCB:s yrkesgrupp {name} (SSYK {o['code']})."
+    answer += group
     ask = o["slug"] in QUESTION_SLUGS
     if ask:
         answer = (f"En {nl} tjänar i median {kr(med)} i månaden före skatt, {kr(med * 12)} per år, enligt SCB:s lönestatistik för {YEAR}. "
                   f"Efter skatt blir det {kr(med_net)} i månaden med genomsnittlig kommunalskatt. "
-                  f"Lönen är {cmp_all}, plats {o['rank']} av {n_occ} yrken.")
+                  f"Lönen är {cmp_all}, plats {o['rank']} av {n_occ} yrken.") + group
 
     # men / women
     men, women = o["y"].get("all", {}).get("men", {}), o["y"].get("all", {}).get("women", {})
@@ -315,6 +346,7 @@ def page_occ(o):
 {sect_html}
 {reg_html}
 {AD_MID if (age_html or reg_html) else ""}
+{titles_html(o)}
 {faq_html(faqs)}
 {related}
 <p class="small source">Källa: SCB, Lönestrukturstatistik {YEAR} (yrkeskod SSYK {o['code']}), heltidslön inklusive fasta tillägg. Skatt enligt Skatteverkets tekniska beskrivning för {TAX_YEAR}.</p>
@@ -330,6 +362,14 @@ def page_occ(o):
                f"Medianlön för {nl}: {kr(med)} före skatt och {kr(med_net)} efter skatt i månaden.",
                f"{name}: median {kr(med)} före skatt, {kr(med_net)} efter skatt.",
                f"{name}: median {kr(med)}, {kr(med_net)} efter skatt.")
+    if tt and not ask:
+        lead = tt["lead"][0]; alts = [a for a, _ in tt["alts"]]
+        title = fit(70, *[f"{lead} lön {TAX_YEAR}: {kr(med)} ({', '.join(alts[:k])})" for k in range(min(len(alts), 2), 0, -1)],
+                    f"{lead} lön {TAX_YEAR}: {kr(med)}", f"{lead} lön: {kr(med)}")
+        also = f" SCB:s grupp {name} omfattar även {' och '.join(alts[:2])}." if alts else ""
+        desc = fit(160, f"{lead} lön {TAX_YEAR}: medianlönen är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt.{also}",
+                   f"{lead} lön: median {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt.{also}",
+                   f"{lead} lön: median {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt (SCB {YEAR}).")
     if ask:
         title = fit(70, f"Hur mycket tjänar en {nl}? {kr(med)} i månaden ({TAX_YEAR})", f"Hur mycket tjänar en {nl}? {kr(med)} i månaden")
         desc = fit(160, f"Hur mycket tjänar en {nl}? Medianlönen är {kr(med)} i månaden före skatt och {kr(med_net)} efter skatt. Se lön per ålder, sektor och region.",

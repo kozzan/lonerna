@@ -38,5 +38,56 @@ console.log(JSON.stringify(bad.slice(0,5)))"""
             self.assertEqual(int(got), tax.monthly_net(s, 32.42, 0.29, 1.05)[1], s)
 
 
+class EverydayTitles(unittest.TestCase):
+    """SITE-65: occupation pages lead with the title people search for, never an invented one."""
+
+    @classmethod
+    def setUpClass(cls):
+        from tools import build as B
+        cls.B = B
+        cls.pages = {p["route"]: p for p in (B.page_occ(o) for o in B.OCC)}
+
+    def test_every_title_comes_from_scb(self):
+        from tools.titles import TITLES, GROUP
+        B = self.B
+        for code, t in TITLES.items():
+            self.assertIn(code, B.BY_CODE, f"{code} has no occupation page")
+            for title, src in [t["lead"]] + t["alts"]:
+                if src == GROUP:
+                    self.assertIn(title.lower(), B.BY_CODE[code]["name"].lower(), f"{code} {title}")
+                else:
+                    self.assertIn(src, B.SSYK_TITLES[code], f"{code} {title}: {src!r} is not in SCB's index for this code")
+
+    def test_mapped_page_leads_with_the_searched_title(self):
+        p = self.pages["/yrke/informatorer-kommunikatorer-och-pr-specialister/"]
+        self.assertRegex(p["title"], r"^PR-specialist lön 2026: [\d\s]+kr \(kommunikatör, informatör\)$")
+        self.assertIn("<h1>Lön för PR-specialister och kommunikatörer</h1>", p["body"])
+        self.assertTrue(p["desc"].startswith("PR-specialist lön"))
+        self.assertIn("Siffrorna gäller SCB:s yrkesgrupp Informatörer, kommunikatörer och PR-specialister (SSYK 2432).", p["body"])
+        self.assertIn('<h2 id="titlar">Vanliga titlar</h2><ul class="titlar"><li>PR-specialist</li><li>kommunikatör</li>', p["body"])
+
+    def test_unmapped_page_keeps_its_wording_but_gets_titles(self):
+        from tools.titles import TITLES
+        o = next(o for o in self.B.OCC if o["code"] not in TITLES and self.B.SSYK_TITLES.get(o["code"]) and o["slug"] not in self.B.QUESTION_SLUGS)
+        p = self.pages[f"/yrke/{o['slug']}/"]
+        self.assertTrue(p["title"].startswith(o["name"][:20]), p["title"])
+        self.assertIn(f"<h1>Lön för {self.B.esc(self.B.lower_first(o['name']))}</h1>", p["body"])
+        self.assertIn('id="titlar"', p["body"])
+        self.assertIn(f"(SSYK {o['code']})", p["body"])
+
+    def test_question_page_keeps_its_framing(self):
+        p = self.pages["/yrke/fastighetsforvaltare/"]
+        self.assertTrue(p["title"].startswith("Hur mycket tjänar en fastighetsförvaltare?"))
+        self.assertIn("<li>vicevärd</li>", p["body"])
+
+    def test_urls_unchanged_and_limits_kept(self):
+        for o in self.B.OCC:
+            self.assertIn(f"/yrke/{self.B.slugify(o['name'])}/", self.pages)
+        for r, p in self.pages.items():
+            self.assertLessEqual(len(p["title"]), 70, r)
+            self.assertLessEqual(len(p["desc"]), 160, r)
+        self.assertEqual(len(self.pages), len(self.B.OCC))
+
+
 if __name__ == "__main__":
     unittest.main()
